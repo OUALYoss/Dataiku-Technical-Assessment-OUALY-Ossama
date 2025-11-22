@@ -47,28 +47,3 @@ SAMPLE_TICKETS = [
 ]
 
 
-
-def get_ticket_by_id(ticket_id: str):
-    
-    """
-    Goal : Retrieve a ticket by its ID.
-    
-    Args: 
-        ticket_id (str): the ticket ID.
-    
-    Return :
-        a ticket
-    """
-    for ticket in SAMPLE_TICKETS:
-        if ticket["id"] == ticket_id:
-            return ticket
-    return None
-
-def get_random_ticket():
-    """
-    Goal :  Return a random ticket for testing purposes.
-    
-    Return : A random ticket
-    """
-    import random
-    return random.choice(SAMPLE_TICKETS)

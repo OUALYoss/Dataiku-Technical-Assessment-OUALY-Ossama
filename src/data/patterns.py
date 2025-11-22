@@ -1,30 +1,3 @@
-CATEGORY_PATTERNS = {
-    "PASSWORD_ACCESS": [
-        "password", "login", "locked out", "can't access", "cannot access",
-        "reset", "forgotten", "expired", "credentials", "authenticate",
-        "sign in", "log in", "access denied"
-    ],
-    "SOFTWARE_ISSUES": [
-        "crash", "error", "not working", "frozen", "slow", "bug",
-        "update", "install", "uninstall", "corrupted", "glitch",
-        "not responding", "hangs", "freezes"
-    ],
-    "NETWORK_CONNECTIVITY": [
-        "wifi", "wi-fi", "internet", "connection", "vpn", "network",
-        "offline", "disconnected", "timeout", "cannot connect",
-        "no connection", "ethernet", "bandwidth"
-    ],
-    "HARDWARE_PROBLEMS": [
-        "printer", "keyboard", "mouse", "monitor", "screen", "display",
-        "computer", "device", "hardware", "speaker", "microphone",
-        "camera", "webcam", "usb", "port"
-    ],
-    "EMAIL_ISSUES": [
-        "email", "outlook", "gmail", "attachment", "calendar", "inbox",
-        "meeting", "invite", "mail", "sent", "received", "sync",
-        "distribution list", "mailbox"
-    ]
-}
 
 # Mots-clés pour la priorité
 PRIORITY_KEYWORDS = {
@@ -72,10 +45,3 @@ PRIORITY_RULES = {
     }
 }
 
-def get_category_patterns():
-    """Retourne tous les patterns de catégories"""
-    return CATEGORY_PATTERNS
-
-def get_priority_keywords():
-    """Retourne les mots-clés de priorité"""
-    return PRIORITY_KEYWORDS

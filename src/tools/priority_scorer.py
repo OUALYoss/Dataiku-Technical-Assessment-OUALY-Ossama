@@ -56,7 +56,7 @@ class PriorityScorer:
             "MEDIUM": [],
             "LOW": []
         }
-        
+        # à optimiser 
         for priority_level, keywords in self.priority_keywords.items():
             for keyword in keywords:
                 if keyword.lower() in text_lower:

@@ -103,28 +103,3 @@ KB_ARTICLES = [
         "success_rate": "80%"
     }
 ]
-
-def search_kb(category: str = None, keywords: list = None):
-    """Recherche dans la KB"""
-    results = []
-    
-    for article in KB_ARTICLES:
-        score = 0
-        
-        # Filtre par catégorie
-        if category and article["category"] == category:
-            score += 50
-        
-        # Recherche par mots-clés
-        if keywords:
-            article_text = f"{article['title']} {article['content']}".lower()
-            for keyword in keywords:
-                if keyword.lower() in article_text:
-                    score += 10
-        
-        if score > 0:
-            results.append((article, score))
-    
-    # Trier par score
-    results.sort(key=lambda x: x[1], reverse=True)
-    return [article for article, _ in results[:3]]
