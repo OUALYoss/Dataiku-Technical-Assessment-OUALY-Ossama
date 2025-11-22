@@ -51,11 +51,13 @@ SAMPLE_TICKETS = [
 def get_ticket_by_id(ticket_id: str):
     
     """
-    Input: ticket_id (str): the ticket ID.
-    
     Goal : Retrieve a ticket by its ID.
     
-    Return : A ticket
+    Args: 
+        ticket_id (str): the ticket ID.
+    
+    Return :
+        a ticket
     """
     for ticket in SAMPLE_TICKETS:
         if ticket["id"] == ticket_id:
