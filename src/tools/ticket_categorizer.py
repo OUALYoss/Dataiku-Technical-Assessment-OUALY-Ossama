@@ -1,6 +1,7 @@
 from openai import OpenAI
+from typing import Dict, List
 import json
-from config import OPENAI_API_KEY, MODEL_NAME
+from src.config import OPENAI_API_KEY, MODEL_NAME
 
 
 class TicketCategorizer:

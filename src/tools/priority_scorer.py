@@ -1,5 +1,5 @@
 from typing import Dict, List, Optional
-from data.patterns import PRIORITY_KEYWORDS, PRIORITY_RULES
+from src.data.patterns import PRIORITY_KEYWORDS, PRIORITY_RULES
 
 class PriorityScorer:
     
