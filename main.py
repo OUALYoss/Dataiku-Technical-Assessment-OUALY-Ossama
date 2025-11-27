@@ -6,25 +6,13 @@ from src.data.sample_tickets import SAMPLE_TICKETS
 
 def main():
     print("""
-    ╔══════════════════════════════════════════════════════════╗
-    ║     🤖 IT SUPPORT ADVISOR - ReAct Agent                 ║
-    ╚══════════════════════════════════════════════════════════╝
+    ********************************************************
+    *     🤖 IT SUPPORT ADVISOR - ReAct Agent              *
+    ********************************************************
     """)
-    
-    # Test 1: Mode silencieux
-    print("\n1️⃣ TEST SILENCIEUX (verbose=False)")
-    print("-" * 60)
-    agent_silent = ITSupportReActAgent(verbose=False)
-    result = agent_silent.analyze_ticket(SAMPLE_TICKETS[-1])
-    
-    print(f"✅ Analysis complete!")
-    print(f"   Category: {result['recommendation'].get('category')}")
-    print(f"   Priority: {result['recommendation'].get('priority')}")
-    print(f"   Steps taken: {result['total_steps']}")
-    
-    # Test 2: Mode verbose (affiche automatiquement tout)
-    print("\n\n2️⃣ TEST AVEC AFFICHAGE DÉTAILLÉ (verbose=True)")
-    print("-" * 60)
+
+    print("\n\n TEST AVEC AFFICHAGE DÉTAILLÉ (verbose=True)")
+    print("_" * 60)
     agent_verbose = ITSupportReActAgent(verbose=True)
     result = agent_verbose.analyze_ticket(SAMPLE_TICKETS[-1])  # Ticket WiFi
     

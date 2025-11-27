@@ -22,24 +22,20 @@ class ReActStep:
     
     
 class ITSupportReActAgent: 
-    """
-    Agent ReAct pour l'analyse de tickets IT Support
-    Implémente le pattern Reasoning + Acting avec LLM
-    """
     
     def __init__(self, verbose: bool = False, max_steps: int = 7):
         """
-        Initialise l'agent ReAct
+        Initialise agent ReAct
         Args:
-            verbose: Si True, affiche les étapes (simple print)
-            max_steps: Nombre maximum d'étapes (défaut: 6)
+            verbose: if True, print all the steps 
+            max_steps:  maximum of steps (default: 6)
         """
         self.client = OpenAI(api_key=OPENAI_API_KEY)
         self.model = MODEL_NAME
         self.verbose = verbose
         self.max_steps = max_steps
         
-        # Initialiser les tools
+        # Initialise tools
         self.tools = {
             "ticket_categorizer": TicketCategorizer(),
             "search_knowledge_base": SupabaseVectorKBSearcher(),
@@ -51,12 +47,12 @@ class ITSupportReActAgent:
         if self.enable_safety:
             try:
                 self.safety_checker = SafetyChecker()
-                print("🛡️  Safety checking enabled (Llama Guard 3)")
+                print("Safety checking enabled  using Llama Guard 3")
             except Exception as e:
-                print(f"⚠️  Safety checker disabled: {e}")
+                print(f"Safety checker disabled: {e}")
                 self.enable_safety = False
         
-        # État de l'agent
+        # reset the agent
         self.reset()
         
         
@@ -66,7 +62,7 @@ class ITSupportReActAgent:
         self.context = {}
         self.observations = {}
         self.current_step = 0
-        self.used_tools = set()  # Track des outils déjà utilisés
+        self.used_tools = set()  # Track 
         
         
     def analyze_ticket(self, ticket: Dict) -> Dict:
@@ -84,52 +80,53 @@ class ITSupportReActAgent:
         ticket_text = f"{ticket['subject']}\n{ticket['description']}"
         
         if self.verbose:
-            print(f"\n{'='*60}")
-            print(f"🎫 Analyzing Ticket: {ticket['id']}")
+            print(f"\n{'*'*60}")
+            print(f"Start analyzing the ticket: {ticket['id']}")
             print(f"Subject: {ticket['subject']}")
-            print(f"{'='*60}\n")
+            print(f"{'*'*60}\n")
         
         # ReAct Loop Principal
         for step in range(1, self.max_steps + 1):
             self.current_step = step
             
-            # =====================================================
-            # ÉTAPE 1: THOUGHT - Générer une pensée
-            # =====================================================
+            
+            # Step 1: THOUGHT about the user query
+            
             thought = self._generate_thought(ticket_text)
             
             if self.verbose:
-                print(f"💭 Step {self.current_step}: {thought}")
+                print(f"Step N°{self.current_step}: {thought}")
             
             # Vérifier si le LLM veut terminer
             if "FINISH" in thought.upper() or self._has_enough_info():
                 if self.verbose:
-                    print("\n✅ Agent has gathered sufficient information!")
+                    print("\n => Agent has gathered sufficient information!")
+                    print("\n => Ready to answer")
                 break
             
-            # =====================================================
-            # ÉTAPE 2: ACTION - Décider quelle action prendre
-            # =====================================================
+           
+            # Step 2: ACTION to choose
+          
             action, action_input = self._decide_action(thought, ticket_text)
             
             if action == "FINISH" or action is None:
                 if self.verbose:
-                    print("\n✅ All tools have been used!")
+                    print("\n All tools have been used!")
                 break
             
             if self.verbose:
                 print(f"🎯 Action: {action}")
             
-            # =====================================================
-            # ÉTAPE 3: OBSERVATION - Exécuter l'action
-            # =====================================================
+            
+            # Step 3: OBSERVATION Execute the action
+         
             observation = self._execute_tool(action, action_input)
-            self.used_tools.add(action)
+            self.used_tools.add(action) # in order to not use a tool more than one time
             
             if self.verbose:
                 self._print_observation(action, observation)
             
-            # Enregistrer l'étape complète
+            # save the step 
             react_step = ReActStep(
                 step_number=self.current_step,
                 thought=thought,
@@ -141,11 +138,11 @@ class ITSupportReActAgent:
             self.reasoning_chain.append(react_step)
             self.observations[action] = observation
         
-        # =====================================================
-        # GÉNÉRATION DE LA RECOMMANDATION FINALE
-        # =====================================================
+        
+        # FINAL RECOMMANDATION 
+       
         if self.verbose:
-            print(f"\n💡 Generating final recommendation based on gathered information...")
+            print(f"\n => Generating final recommendation based on gathered information")
         
         recommendation = self._generate_final_recommendation(ticket)
         
@@ -163,16 +160,16 @@ class ITSupportReActAgent:
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
     def _generate_thought(self, ticket_text: str) -> str:
         """
-        Génère une pensée basée sur le contexte actuel
-        Le LLM décide ce qu'il doit faire ensuite
+        Generate a thought based on the current context.
+        The LLM decides what it should do next.
         """
         prompt = self._build_thought_prompt(ticket_text)
         
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": self._get_thought_system_prompt()},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": self._get_thought_system_prompt()},  # system message for the llm
+                {"role": "user", "content": prompt} # user message 
             ],
             temperature=0.3,
             max_tokens=200
@@ -182,43 +179,45 @@ class ITSupportReActAgent:
     
     
     def _get_thought_system_prompt(self) -> str:
-        """Prompt système pour la génération de pensées"""
-        return """You are a ReAct reasoning agent for IT support ticket analysis.
+        """
+        System Prompt thought generation
+        """
+        return """ You are a ReAct reasoning agent for IT support ticket analysis.
 
-Your goal: Analyze the ticket by gathering information using available tools.
+            Your goal: Analyze the ticket by gathering information using available tools.
 
-Available tools:
-1. ticket_categorizer - Identify the ticket category (use this FIRST)
-2. search_knowledge_base - Find relevant solutions (use AFTER categorization)
-3. calculate_priority - Assess urgency level (use to determine response time)
+            Available tools:
+            1. ticket_categorizer :Identify the ticket category (use this FIRST)
+            2. search_knowledge_base : Find relevant solutions (use AFTER categorization)
+            3. calculate_priority : Assess urgency level (use to determine response time)
 
-Rules:
-- Think step by step about what information you need
-- Use each tool only ONCE
-- After using all 3 tools, say "FINISH: I have all the information needed"
-- Be concise and specific in your thoughts
-- Don't repeat yourself
+            Rules:
+            - Think step by step about what information you need
+            - Use each tool only ONCE
+            - After using all 3 tools, say "FINISH: I have all the information needed"
+            - Be concise and specific in your thoughts
+            - Don't repeat yourself
 
-Format your response as a single clear thought about what you need to do next."""
+            Format your response as a single clear thought about what you need to do next."""
     
     
     def _build_thought_prompt(self, ticket_text: str) -> str:
-        """Construit le prompt contextuel pour la génération de pensée"""
+        """Build the contextual prompt for thought generation."""
         
-        # Outils déjà utilisés
+        # used tools
         used_tools_str = ", ".join(self.used_tools) if self.used_tools else "None"
         
-        # Outils disponibles (pas encore utilisés)
+        # available tools
         available_tools = [tool for tool in self.tools.keys() if tool not in self.used_tools]
         available_tools_str = ", ".join(available_tools) if available_tools else "None"
         
-        prompt = f"""TICKET TO ANALYZE:
-{ticket_text}
+        prompt = f"""
+                TICKET TO ANALYZE:
+                    {ticket_text}
 
-TOOLS ALREADY USED: {used_tools_str}
-TOOLS STILL AVAILABLE: {available_tools_str}
-
-"""
+                    TOOLS ALREADY USED: {used_tools_str}
+                    TOOLS STILL AVAILABLE: {available_tools_str}
+                    """
         
         # Ajouter les observations précédentes
         if self.observations:
@@ -257,19 +256,19 @@ TOOLS STILL AVAILABLE: {available_tools_str}
         
         prompt = f"""Based on this thought: "{thought}"
 
-Available tools you haven't used yet:
-{json.dumps(available_tools, indent=2)}
+                Available tools you haven't used yet:
+                {json.dumps(available_tools, indent=2)}
 
-Tools already used: {list(self.used_tools)}
+                Tools already used: {list(self.used_tools)}
 
-Which tool should you use NEXT? Choose ONE tool from the available list.
+                Which tool should you use NEXT? Choose ONE tool from the available list.
 
-Respond in JSON format:
-{{
-    "tool": "exact_tool_name_from_list",
-    "reason": "brief reason why"
-}}
-"""
+                Respond in JSON format:
+                {{
+                    "tool": "exact_tool_name_from_list",
+                    "reason": "brief reason why"
+                }}
+                """
         
         response = self.client.chat.completions.create(
             model=self.model,
@@ -377,23 +376,27 @@ Respond in JSON format:
         recommendation_text = response.choices[0].message.content
         
         # Debug
-        if self.verbose:
-            print("\n" + "="*80)
-            print("🔍 DEBUG: LLM Response")
-            print("="*80)
-            print(recommendation_text[:500] + "..." if len(recommendation_text) > 500 else recommendation_text)
-            print("="*80)
+        # if self.verbose:
+        #     print("\n" + "="*80)
+        #     print("🔍 DEBUG: LLM Response")
+        #     print("="*80)
+        #     print(recommendation_text[:500] + "..." if len(recommendation_text) > 500 else recommendation_text)
+        #     print("="*80)
         
         # Safety check
         if self.enable_safety:
-            print("\n🛡️  Running safety check...")
+            print(f"\n{'#'*50}")
+            print(" Llama Guard")
+            print(f"{'#'*50}")
+            
+            print("\n Running safety check :")
             safety_result = self.safety_checker.check_agent_output(recommendation_text)
             
             print(f"   Is safe: {safety_result['is_safe']}")
             print(f"   Raw response: {safety_result['raw_response']}")
             
             if not safety_result["is_safe"]:
-                print("⚠️ SAFETY VIOLATION DETECTED")
+                print(" SAFETY VIOLATION DETECTED ")
                 print(f"Categories: {safety_result['violated_categories']}")
                 
                 return {
@@ -412,7 +415,7 @@ Respond in JSON format:
                     "safety_categories": safety_result['violated_categories']
                 }
             else:
-                print("   ✅ Content passed safety check")
+                print(" safety check : Done")
         
         # Parse recommendation
         recommendation = json.loads(recommendation_text)
@@ -445,14 +448,14 @@ ANALYSIS RESULTS:
         # Catégorisation
         if "ticket_categorizer" in self.observations:
             cat = self.observations["ticket_categorizer"]
-            context += f"\n✓ CATEGORY: {cat.get('category')} (Confidence: {cat.get('confidence')}%)"
+            context += f"\n CATEGORY: {cat.get('category')} (Confidence: {cat.get('confidence')}%)"
             if cat.get('keywords'):
                 context += f"\n  Keywords detected: {', '.join(cat.get('keywords', []))}"
         
         # Priorité
         if "calculate_priority" in self.observations:
             pri = self.observations["calculate_priority"]
-            context += f"\n\n✓ PRIORITY: {pri.get('priority')}"
+            context += f"\n\n PRIORITY: {pri.get('priority')}"
             context += f"\n  Response Time: {pri.get('response_time')}"
             context += f"\n  Score: {pri.get('score')}"
             if pri.get('factors'):
@@ -462,7 +465,7 @@ ANALYSIS RESULTS:
         if "search_knowledge_base" in self.observations:
             kb = self.observations["search_knowledge_base"]
             articles = kb.get('articles', [])
-            context += f"\n\n✓ KNOWLEDGE BASE: Found {len(articles)} relevant articles"
+            context += f"\n\n KNOWLEDGE BASE: Found {len(articles)} relevant articles"
             
             if articles:
                 context += "\n  Top solutions:"
@@ -501,13 +504,13 @@ Focus on immediate actionable steps, required tools, realistic time estimates, a
     
     def _print_final_recommendation(self, recommendation: Dict):
         """Affiche la recommandation finale de manière compacte"""
-        print(f"\n{'='*80}")
-        print("📋 FINAL RECOMMENDATION")
-        print(f"{'='*80}")
+        print(f"\n{'='*50}")
+        print(" FINAL RECOMMENDATION")
+        print(f"{'='*50}")
         
         # Safety warning
         if recommendation.get("safety_flagged"):
-            print(f"\n🛡️  Safety flagged: {', '.join(recommendation.get('safety_categories', []))}")
+            print(f"\n Safety flagged: {', '.join(recommendation.get('safety_categories', []))}")
             print(f"    Safe fallback provided")
         
         # Header info
@@ -527,19 +530,16 @@ Focus on immediate actionable steps, required tools, realistic time estimates, a
         
         # Tools
         if tools := recommendation.get('tools_required'):
-            print(f"\n🛠️  Tools: {', '.join(tools)}")
+            print(f"\n ✓  Tools: {', '.join(tools)}")
         
         # KB articles (compact)
         if articles := recommendation.get('kb_articles'):
-            print(f"\n📚 KB: {', '.join(a.get('kb_id', '') for a in articles[:3])}")
+            print(f"\n ✓   KB: {', '.join(a.get('kb_id', '') for a in articles[:3])}")
         
         # Escalation flag
         if recommendation.get('escalation_needed'):
             print(f"\n⚠️  Escalation required")
         
-        # Notes (if any)
-        if notes := recommendation.get('notes'):
-            print(f"\n💬 {notes}")
         
         print(f"{'='*80}\n")
     
