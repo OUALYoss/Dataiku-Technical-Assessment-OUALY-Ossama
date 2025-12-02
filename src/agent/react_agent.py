@@ -28,7 +28,7 @@ class ITSupportReActAgent:
         Initialise agent ReAct
         Args:
             verbose: if True, print all the steps 
-            max_steps:  maximum of steps (default: 6)
+            max_steps:  maximum of steps (default: 7)
         """
         self.client = OpenAI(api_key=OPENAI_API_KEY)
         self.model = MODEL_NAME
@@ -45,12 +45,8 @@ class ITSupportReActAgent:
         # Initialize safety checker 
         self.enable_safety = os.getenv("ENABLE_SAFETY_CHECK", "true").lower() == "true"
         if self.enable_safety:
-            try:
-                self.safety_checker = SafetyChecker()
-                print("Safety checking enabled  using Llama Guard 3")
-            except Exception as e:
-                print(f"Safety checker disabled: {e}")
-                self.enable_safety = False
+            self.safety_checker = SafetyChecker()
+        
         
         # reset the agent
         self.reset()
@@ -67,23 +63,21 @@ class ITSupportReActAgent:
         
     def analyze_ticket(self, ticket: Dict) -> Dict:
         """
-        Analyse principale d'un ticket avec ReAct loop
-        
-        Le cycle ReAct:
-        1. THOUGHT: Le LLM réfléchit à ce qu'il faut faire
-        2. ACTION: Le LLM choisit un outil à utiliser
-        3. OBSERVATION: L'outil est exécuté et retourne un résultat
-        4. Répéter jusqu'à avoir assez d'information
+        Main analysis of a ticket using the ReAct loop:
+            THOUGHT: The LLM thinks about what needs to be done
+            ACTION: The LLM chooses a tool to use
+            OBSERVATION: The tool is executed and returns a result
+            Repeat until enough information is obtained
         """
         self.reset()
         self.context['ticket'] = ticket
         ticket_text = f"{ticket['subject']}\n{ticket['description']}"
         
-        if self.verbose:
-            print(f"\n{'*'*60}")
-            print(f"Start analyzing the ticket: {ticket['id']}")
-            print(f"Subject: {ticket['subject']}")
-            print(f"{'*'*60}\n")
+        
+        print(f"\n{'*'*60}")
+        print(f"Start analyzing the ticket: {ticket['id']}")
+        print(f"Subject: {ticket['subject']}")
+        print(f"{'*'*60}\n")
         
         # ReAct Loop Principal
         for step in range(1, self.max_steps + 1):
@@ -97,11 +91,11 @@ class ITSupportReActAgent:
             if self.verbose:
                 print(f"Step N°{self.current_step}: {thought}")
             
-            # Vérifier si le LLM veut terminer
+            # Check whether the LLM wants to finish : if True it will send "FINISH" in the thought
             if "FINISH" in thought.upper() or self._has_enough_info():
                 if self.verbose:
                     print("\n => Agent has gathered sufficient information!")
-                    print("\n => Ready to answer")
+                    print("\n => Ready to answer the ticket!")
                 break
             
            
@@ -115,7 +109,7 @@ class ITSupportReActAgent:
                 break
             
             if self.verbose:
-                print(f"🎯 Action: {action}")
+                print(f" Action: {action}")
             
             
             # Step 3: OBSERVATION Execute the action
@@ -123,8 +117,8 @@ class ITSupportReActAgent:
             observation = self._execute_tool(action, action_input)
             self.used_tools.add(action) # in order to not use a tool more than one time
             
-            if self.verbose:
-                self._print_observation(action, observation)
+            # if self.verbose:
+            #     self._print_observation(action, observation)
             
             # save the step 
             react_step = ReActStep(
@@ -141,13 +135,13 @@ class ITSupportReActAgent:
         
         # FINAL RECOMMANDATION 
        
-        if self.verbose:
-            print(f"\n => Generating final recommendation based on gathered information")
+        
+        print(f"\n => Generating final recommendation based on gathered information")
         
         recommendation = self._generate_final_recommendation(ticket)
         
-        if self.verbose:
-            self._print_final_recommendation(recommendation)
+        
+        self._print_final_recommendation(recommendation)
         
         return {
             "ticket_id": ticket['id'],
@@ -222,8 +216,8 @@ class ITSupportReActAgent:
         # Ajouter les observations précédentes
         if self.observations:
             prompt += "INFORMATION GATHERED SO FAR:\n"
-            for tool_name, obs in self.observations.items():
-                if isinstance(obs, dict):
+            for _ , obs in self.observations.items(): # _ is used to ignore the tool name
+                if isinstance(obs, dict): #  The obs  should be a dictionary that contains : results of the execution of each tool
                     if 'category' in obs:
                         prompt += f"- Category: {obs.get('category')} (confidence: {obs.get('confidence')}%)\n"
                     elif 'priority' in obs:
@@ -232,18 +226,18 @@ class ITSupportReActAgent:
                         prompt += f"- KB Articles: Found {len(obs.get('articles', []))} relevant articles\n"
             prompt += "\n"
         
-        prompt += "What should you do next? (If you have all information, say 'FINISH')"
-        
+        prompt += "What should you do next? (If you have all information, say 'FINISH')" # FINISH is used to end the loop
+         
         return prompt
     
     
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10)) # we have only 3 tools so we can't use more than 3 times
     def _decide_action(self, thought: str, ticket_text: str) -> Tuple[Optional[str], Dict]:
         """
-        Le LLM décide quelle action prendre basée sur sa pensée
+        The LLM decides which action to take based on its thought
         Returns: (tool_name, tool_input)
         """
-        
+         
         # Si tous les outils ont été utilisés, terminer
         if len(self.used_tools) >= 3:
             return None, {}
@@ -284,26 +278,26 @@ class ITSupportReActAgent:
         result = json.loads(response.choices[0].message.content)
         tool_name = result.get("tool")
         
-        # Validation: le tool doit être dans la liste disponible
+        # Validation: the tool must be in the available list
         if tool_name not in available_tools:
-            # Fallback: prendre le premier outil disponible
+            # Fallback: take the first tool available
             tool_name = available_tools[0] if available_tools else None
         
         if tool_name is None:
             return None, {}
         
-        # Préparer les inputs pour le tool
+        # Prepare the inputs for the tool
         action_input = self._prepare_tool_input(tool_name, ticket_text)
         
         return tool_name, action_input
     
     
     def _prepare_tool_input(self, tool_name: str, ticket_text: str) -> Dict:
-        """Prépare les inputs appropriés pour chaque tool"""
+        """Prepare the inputs appropriate for each tool"""
         
         base_input = {"ticket_text": ticket_text}
         
-        # Ajouter la catégorie si elle est disponible
+        # Add the category if it is available
         if "ticket_categorizer" in self.observations:
             category = self.observations["ticket_categorizer"].get("category")
             if category and tool_name in ["search_knowledge_base", "calculate_priority"]:
@@ -313,7 +307,7 @@ class ITSupportReActAgent:
     
     
     def _execute_tool(self, tool_name: str, tool_input: Dict) -> Dict:
-        """Exécute un tool et retourne l'observation"""
+        """Execute a tool and return the observation"""
         if tool_name not in self.tools:
             return {"error": f"Unknown tool: {tool_name}"}
         
@@ -325,7 +319,7 @@ class ITSupportReActAgent:
     
     
     def _has_enough_info(self) -> bool:
-        """Vérifie si tous les outils requis ont été utilisés"""
+        """Check if all the required tools have been used"""
         required_tools = {"ticket_categorizer", "search_knowledge_base", "calculate_priority"}
         return required_tools.issubset(self.used_tools)
     
@@ -385,9 +379,9 @@ class ITSupportReActAgent:
         
         # Safety check
         if self.enable_safety:
-            print(f"\n{'#'*50}")
+            print(f"\n{'-'*50}")
             print(" Llama Guard")
-            print(f"{'#'*50}")
+            print(f"{'-'*50}")
             
             print("\n Running safety check :")
             safety_result = self.safety_checker.check_agent_output(recommendation_text)
@@ -433,7 +427,7 @@ class ITSupportReActAgent:
     
     
     def _build_recommendation_context(self, ticket: Dict) -> str:
-        """Construit le contexte complet pour la recommandation finale"""
+        """Build the complete context for the final recommendation"""
         
         context = f"""COMPLETE TICKET ANALYSIS
 
@@ -445,14 +439,14 @@ TICKET DETAILS:
 ANALYSIS RESULTS:
 """
         
-        # Catégorisation
+        # Categorization
         if "ticket_categorizer" in self.observations:
             cat = self.observations["ticket_categorizer"]
             context += f"\n CATEGORY: {cat.get('category')} (Confidence: {cat.get('confidence')}%)"
             if cat.get('keywords'):
                 context += f"\n  Keywords detected: {', '.join(cat.get('keywords', []))}"
         
-        # Priorité
+        # Priority
         if "calculate_priority" in self.observations:
             pri = self.observations["calculate_priority"]
             context += f"\n\n PRIORITY: {pri.get('priority')}"
@@ -483,27 +477,12 @@ Focus on immediate actionable steps, required tools, realistic time estimates, a
         return context
     
     
-    def _print_observation(self, action: str, observation: Dict):
-        """Affiche l'observation de manière formatée"""
-        if isinstance(observation, dict):
-            if 'category' in observation:
-                print(f"   → Category: {observation.get('category')} ({observation.get('confidence')}% confidence)")
-            elif 'priority' in observation:
-                print(f"   → Priority: {observation.get('priority')} | Response: {observation.get('response_time')}")
-            elif 'articles' in observation:
-                articles = observation.get('articles', [])
-                print(f"   → Found {len(articles)} KB articles")
-                if articles:
-                    for i, article in enumerate(articles[:2], 1):
-                        print(f"      • {article.get('title', 'Unknown')}")
-            else:
-                print(f"   → {str(observation)[:100]}...")
-        else:
-            print(f"   → {str(observation)[:100]}...")
+  
+        
     
     
     def _print_final_recommendation(self, recommendation: Dict):
-        """Affiche la recommandation finale de manière compacte"""
+        """Print the final recommendation in a compact way"""
         print(f"\n{'='*50}")
         print(" FINAL RECOMMENDATION")
         print(f"{'='*50}")
@@ -517,12 +496,14 @@ Focus on immediate actionable steps, required tools, realistic time estimates, a
         category = recommendation.get('category', 'Unknown')
         priority = recommendation.get('priority', 'Unknown')
         est_time = recommendation.get('estimated_time', 'N/A')
+        category_confidence = recommendation.get('category_confidence', 'N/A')
         
-        print(f"\n🏷️  {category} | ⚡ {priority} | ⏱️  {est_time}")
+        if  category_confidence > 70:
+         print(f"\n  {category} ({category_confidence}%) |  {priority} |   {est_time}")
         
         # Immediate actions
         if actions := recommendation.get('immediate_actions'):
-            print(f"\n🔧 Actions:")
+            print(f"\n Actions:")
             for i, action in enumerate(actions, 1):
                 # Clean action text
                 clean = action.strip().lstrip('0123456789.) ')
@@ -536,9 +517,6 @@ Focus on immediate actionable steps, required tools, realistic time estimates, a
         if articles := recommendation.get('kb_articles'):
             print(f"\n ✓   KB: {', '.join(a.get('kb_id', '') for a in articles[:3])}")
         
-        # Escalation flag
-        if recommendation.get('escalation_needed'):
-            print(f"\n⚠️  Escalation required")
         
         
         print(f"{'='*80}\n")

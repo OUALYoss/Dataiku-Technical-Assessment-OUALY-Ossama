@@ -10,7 +10,9 @@ import numpy as np
 
 
 class Reranker:
-    """Reranks search results using cross-encoder"""
+    """
+    Reranks search results using cross-encoder
+    """
     
     def __init__(self, model_name: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"):
         """
@@ -19,11 +21,10 @@ class Reranker:
         Args:
             model_name: Cross-encoder model to use
                 - ms-marco-MiniLM-L-6-v2: Fast, good quality (default)
-                - ms-marco-MiniLM-L-12-v2: Slower, better quality
         """
-        print(f"📥 Loading reranker model: {model_name}...")
+        
         self.model = CrossEncoder(model_name)
-        print(f"✅ Reranker loaded!")
+        print(f"Reranker loaded!")
     
     def rerank(
         self, 
@@ -49,7 +50,7 @@ class Reranker:
         pairs = []
         for article in articles:
             # Use title + content for reranking
-            doc_text = f"{article['title']}. {article.get('full_content', article['content'])}"
+            doc_text = f"{article['title']}. {article.get('content', article['content'])}"
             pairs.append([query, doc_text])
         
         # Get reranking scores

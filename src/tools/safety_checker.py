@@ -45,13 +45,14 @@ class SafetyChecker:
         self.client = Together(api_key=self.api_key)
         self.model = model
         
-        print(f"✅ Safety Checker initialized (Llama Guard 3)")
+        print(f"Safety Checker initialized ")
+        print("_" * 60)
     
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
     def check_safety(
         self, 
         text: str, 
-        role: str = "Agent"  # "User" or "Agent"
+        role: str = "Agent"  
     ) -> Dict:
         """
         Check if text is safe
@@ -67,6 +68,7 @@ class SafetyChecker:
                 - raw_response: str
         """
         # Build prompt for Llama Guard 3
+        # there are special tokens for the Meta model (Llama Guard 3)
         prompt = f"""<|begin_of_text|><|start_header_id|>user<|end_header_id|>
 
 Task: Check if there is unsafe content in '{role}' messages in conversations according our safety policy with the below categories.

@@ -9,7 +9,7 @@ MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 
 # Agent Config
-MAX_REACT_STEPS = 10
+MAX_REACT_STEPS = 7
 TEMPERATURE = 0.1  # Low pour plus de cohérence
 MAX_TOKENS = 500
 

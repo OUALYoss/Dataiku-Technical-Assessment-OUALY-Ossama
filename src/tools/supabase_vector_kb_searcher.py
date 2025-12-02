@@ -15,7 +15,7 @@ class SupabaseVectorKBSearcher:
         supabase_key: str = None,
         openai_api_key: str = None,
         embedding_model: str = None,
-        use_reranking: bool = True  # ✨ NEW
+        use_reranking: bool = True  
     ):
         """Initialize Supabase vector searcher with reranking"""
         self.name = "search_knowledge_base"
@@ -31,22 +31,22 @@ class SupabaseVectorKBSearcher:
         self.supabase = create_client(self.supabase_url, self.supabase_key)
         self.openai_client = OpenAI(api_key=self.openai_api_key)
         
-        print(f"✅ Supabase Vector KB Searcher initialized")
-        print(f"   Model: {self.embedding_model}")
-        print(f"   Database: {self.supabase_url.split('//')[1].split('.')[0]}")
+     
         
-        # Initialize reranker (NEW)
+        # Initialize reranker
         self.use_reranking = use_reranking
         if self.use_reranking:
             self.reranker = Reranker()
         
-        print(f"✅ Supabase Vector KB Searcher initialized")
+        print(f" Supabase Vector KB Searcher initialized")
         print(f"   Model: {self.embedding_model}")
-        print(f"   Reranking: {'✅ Enabled' if self.use_reranking else '❌ Disabled'}")
+        print(f"   Reranking: {' Enabled' if self.use_reranking else 'Disabled'}")
     
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
     def _get_embedding(self, text: str) -> List[float]:
-        """Generate embedding using OpenAI API"""
+        """
+        Generate embedding using OpenAI API
+        """
         response = self.openai_client.embeddings.create(
             model=self.embedding_model,
             input=text
@@ -56,14 +56,24 @@ class SupabaseVectorKBSearcher:
     def search(
         self,
         query: str,
-        top_k: int = 3,  # ✨ Changed: now final results after reranking
+        top_k: int = 3, 
         category: Optional[str] = None,
         min_similarity: float = 0.5
     ) -> List[Dict]:
-        """Search KB with reranking"""
+        """
+        Search KB with reranking
+        
+        Args:
+            query: Search query
+            top_k: Number of results to return
+            category: Category to filter by
+            min_similarity: Minimum similarity score to return
+        
+        Returns:
+            List of articles"""
         
         # Step 1: Get more results from Supabase for reranking
-        initial_k = top_k * 3 if self.use_reranking else top_k  # Get 3x more
+        initial_k = top_k * 3 if self.use_reranking else top_k  
         
         # Generate query embedding
         query_embedding = self._get_embedding(query)
@@ -74,7 +84,7 @@ class SupabaseVectorKBSearcher:
             {
                 "query_embedding": query_embedding,
                 "match_threshold": min_similarity,
-                "match_count": initial_k,  # ✨ Get more results
+                "match_count": initial_k,  
                 "filter_category": category
             }
         ).execute()
@@ -95,7 +105,7 @@ class SupabaseVectorKBSearcher:
                 "related_articles": article.get("related_articles", [])
             })
         
-        # Step 2: Rerank if enabled (NEW)
+        # Step 2: Rerank 
         if self.use_reranking and articles:
             articles = self.reranker.rerank(query, articles, top_k=top_k)
         else:
