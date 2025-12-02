@@ -62,7 +62,7 @@ This project implements an AI-powered IT support advisor that:
 
 | Component | Technology |
 |-----------|------------|
-| **LLM** | OpenAI GPT-4 / GPT-3.5 |
+| **LLM** | OpenAI GPT-4o-mini |
 | **Embeddings** | OpenAI `text-embedding-3-small` (1536 dim) |
 | **Vector DB** | Supabase with pgvector |
 | **Reranker** | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
