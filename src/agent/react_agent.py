@@ -400,7 +400,6 @@ class ITSupportReActAgent:
                     "tools_required": ["IT Support Portal"],
                     "estimated_time": "Varies",
                     "escalation_needed": True,
-                    "notes": "For safety reasons, automated recommendation was not provided. Please contact support.",
                     "kb_articles": [],
                     "safety_flagged": True,
                     "safety_categories": safety_result['violated_categories']
