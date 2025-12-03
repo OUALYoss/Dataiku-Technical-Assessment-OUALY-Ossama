@@ -348,15 +348,13 @@ class ITSupportReActAgent:
     3. Provide: "immediate_actions": ["Please contact [appropriate professional]"]
     4. Set: "escalation_needed": true
     5. DO NOT provide analysis, research, tools, or strategies for non-IT topics
-    6. DO NOT add disclaimers while still providing the forbidden advice
+    
 
     For legitimate IT support issues only, provide structured recommendations in JSON format:
     - immediate_actions: Specific IT troubleshooting steps
     - tools_required: IT tools and software only
     - estimated_time: Realistic time estimate
-    - preventive_measures: IT security and maintenance steps
     - escalation_needed: Boolean
-    - notes: Additional IT-related information
 
     Return your response as valid JSON with these exact fields.
     Stay strictly within IT technical support domain."""},
@@ -401,7 +399,6 @@ class ITSupportReActAgent:
                     "immediate_actions": ["Please contact IT support directly for assistance with this issue."],
                     "tools_required": ["IT Support Portal"],
                     "estimated_time": "Varies",
-                    "preventive_measures": [],
                     "escalation_needed": True,
                     "notes": "For safety reasons, automated recommendation was not provided. Please contact support.",
                     "kb_articles": [],
