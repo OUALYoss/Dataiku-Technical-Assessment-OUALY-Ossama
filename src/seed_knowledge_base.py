@@ -51,4 +51,4 @@ def seed_kb(articles: list[dict]):
 if __name__ == "__main__":
     from data.knowledge_base import KB_ARTICLES
     seed_kb(KB_ARTICLES)
-    print(f"✅ Seeded {len(KB_ARTICLES)} articles")
+    print(f" Seeded {len(KB_ARTICLES)} articles")

@@ -367,13 +367,7 @@ class ITSupportReActAgent:
         
         recommendation_text = response.choices[0].message.content
         
-        # Debug
-        # if self.verbose:
-        #     print("\n" + "="*80)
-        #     print("🔍 DEBUG: LLM Response")
-        #     print("="*80)
-        #     print(recommendation_text[:500] + "..." if len(recommendation_text) > 500 else recommendation_text)
-        #     print("="*80)
+     
         
         # Safety check
         if self.enable_safety:

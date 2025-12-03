@@ -142,9 +142,9 @@ Provide your safety assessment for {role} in the above conversation:
         role = safety_result["checked_role"]
         
         return f"""
-⚠️ SAFETY WARNING ⚠️
-The {role} message has been flagged for potentially unsafe content.
-Violated categories: {categories}
+                    SAFETY WARNING 
+                    The {role} message has been flagged for potentially unsafe content.
+                    Violated categories: {categories}
 
-This content has been blocked for your safety.
-"""
+                    This content has been blocked for your safety.
+                    """

@@ -1,9 +1,3 @@
-"""
-Cross-Encoder Reranker
-----------------------
-Reranks search results using cross-encoder for better relevance
-"""
-
 from typing import List, Dict
 from sentence_transformers import CrossEncoder
 import numpy as np
@@ -19,8 +13,7 @@ class Reranker:
         Initialize reranker
         
         Args:
-            model_name: Cross-encoder model to use
-                - ms-marco-MiniLM-L-6-v2: Fast, good quality (default)
+            model_name: Cross-encoder model to use : ms-marco-MiniLM-L-6-v2
         """
         
         self.model = CrossEncoder(model_name)
@@ -64,5 +57,5 @@ class Reranker:
         # Sort by rerank score
         reranked = sorted(articles, key=lambda x: x['rerank_score'], reverse=True)
         
-        # Return top_k
+        # Return top_k =3
         return reranked[:top_k]
