@@ -1,4 +1,3 @@
-# Dataiku Technical Assessment
 
 #  IT Support Advisor - ReAct Agent
 
